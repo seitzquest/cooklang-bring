@@ -1,0 +1,10 @@
+[project]
+name = "cooklang-bring-integration"
+version = "0.1.0"
+description = "Add Cooklang recipes to Bring! shopping list"
+readme = "README-bring.md"
+requires-python = ">=3.8"
+dependencies = [
+    "python-bring-api>=0.9.1",
+    "python-dotenv>=1.0.0",
+]
