@@ -1,6 +1,6 @@
 # Cooklang to Bring! Shopping List
 
-Sync [Cooklang](https://cooklang.org/) recipes to [Bring!](https://www.getbring.com/) shopping list app with an interactive CLI or command-line interface.
+Export [Cooklang](https://cooklang.org/) recipes to [Bring!](https://www.getbring.com/) shopping list app with an interactive CLI.
 
 ## Setup
 
