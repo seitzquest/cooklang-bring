@@ -14,7 +14,7 @@ repos:
         types_or: [python, pyi, jupyter, toml]
 
       # Run the linter
-      - id: ruff-check
+      - id: ruff
         types_or: [python, pyi, jupyter, toml]
         args: [--fix]
 
