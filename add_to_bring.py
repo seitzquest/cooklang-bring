@@ -25,30 +25,18 @@ import termios
 import tty
 from pathlib import Path
 
-try:
-    from dotenv import load_dotenv
-    DOTENV_AVAILABLE = True
-except ImportError:
-    DOTENV_AVAILABLE = False
-
-try:
-    from python_bring_api.bring import Bring
-    BRING_API_AVAILABLE = True
-except ImportError:
-    BRING_API_AVAILABLE = False
+# Import required dependencies
+from dotenv import load_dotenv
+from python_bring_api.bring import Bring
 
 
 def load_config():
     """Load configuration from .env file."""
-    if not DOTENV_AVAILABLE:
-        print("Error: python-dotenv not installed. Run: pip install python-dotenv")
-        sys.exit(1)
-
     load_dotenv()
 
-    email = os.getenv('BRING_EMAIL')
-    password = os.getenv('BRING_PASSWORD')
-    list_name = os.getenv('BRING_LIST_NAME', '')
+    email = os.getenv("BRING_EMAIL")
+    password = os.getenv("BRING_PASSWORD")
+    list_name = os.getenv("BRING_LIST_NAME", "")
 
     if not email or not password:
         print("Error: BRING_EMAIL and BRING_PASSWORD must be set in .env file")
@@ -75,9 +63,11 @@ def generate_shopping_list(recipe_files, recipes_dir=None):
         recipes_dir = Path(recipes_dir).expanduser().resolve()
 
     try:
-        cmd = ['cook', 'shopping-list', '-f', 'json'] + recipe_files
+        cmd = ["cook", "shopping-list", "-f", "json", *recipe_files]
         # Run cook command in the recipes directory
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True, cwd=str(recipes_dir))
+        result = subprocess.run(
+            cmd, capture_output=True, text=True, check=True, cwd=str(recipes_dir)
+        )
 
         if result.returncode != 0:
             print(f"Error running cook command: {result.stderr}")
@@ -111,7 +101,7 @@ def filter_staples(shopping_list):
     Returns:
         Filtered shopping list without staples category
     """
-    return [cat for cat in shopping_list if cat.get('category', '').lower() != 'staples']
+    return [cat for cat in shopping_list if cat.get("category", "").lower() != "staples"]
 
 
 def format_quantity(quantity_list):
@@ -129,10 +119,10 @@ def format_quantity(quantity_list):
 
     parts = []
     for qty in quantity_list:
-        value = qty.get('value', {})
-        if value.get('type') == 'number':
-            num_value = value.get('value', {}).get('value', '')
-            unit = qty.get('unit', '')
+        value = qty.get("value", {})
+        if value.get("type") == "number":
+            num_value = value.get("value", {}).get("value", "")
+            unit = qty.get("unit", "")
 
             if num_value:
                 if unit:
@@ -143,7 +133,7 @@ def format_quantity(quantity_list):
     return ", ".join(parts)
 
 
-def add_to_bring(shopping_list, email, password, list_name=''):
+def add_to_bring(shopping_list, email, password, list_name=""):
     """
     Add items from shopping list to Bring! app.
 
@@ -153,10 +143,6 @@ def add_to_bring(shopping_list, email, password, list_name=''):
         password: Bring! account password
         list_name: Optional specific list name (uses first list if not specified)
     """
-    if not BRING_API_AVAILABLE:
-        print("Error: python-bring-api not installed. Run: pip install python-bring-api")
-        sys.exit(1)
-
     try:
         # Login to Bring!
         bring = Bring(email, password)
@@ -164,7 +150,7 @@ def add_to_bring(shopping_list, email, password, list_name=''):
 
         # Get available lists
         lists_data = bring.loadLists()
-        lists = lists_data.get('lists', [])
+        lists = lists_data.get("lists", [])
 
         if not lists:
             print("Error: No shopping lists found in your Bring! account")
@@ -174,7 +160,7 @@ def add_to_bring(shopping_list, email, password, list_name=''):
         target_list = None
         if list_name:
             for lst in lists:
-                if lst['name'].lower() == list_name.lower():
+                if lst["name"].lower() == list_name.lower():
                     target_list = lst
                     break
             if not target_list:
@@ -183,8 +169,8 @@ def add_to_bring(shopping_list, email, password, list_name=''):
         else:
             target_list = lists[0]
 
-        list_uuid = target_list['listUuid']
-        list_display_name = target_list['name']
+        list_uuid = target_list["listUuid"]
+        list_display_name = target_list["name"]
 
         print(f"Adding items to Bring! list: {list_display_name}")
         print("-" * 50)
@@ -192,15 +178,15 @@ def add_to_bring(shopping_list, email, password, list_name=''):
         # Add items to Bring!
         total_items = 0
         for category in shopping_list:
-            category_name = category.get('category', 'other')
-            items = category.get('items', [])
+            category_name = category.get("category", "other")
+            items = category.get("items", [])
 
             if items:
                 print(f"\n{category_name.upper()}:")
 
             for item in items:
-                item_name = item.get('name', '')
-                quantity = item.get('quantity', [])
+                item_name = item.get("name", "")
+                quantity = item.get("quantity", [])
 
                 # Format specification (quantity info)
                 spec = format_quantity(quantity)
@@ -252,7 +238,7 @@ def show_context(context_dict):
 
 def get_recipes_dir():
     """Get the recipes directory from environment or default to current directory"""
-    recipes_dir = os.environ.get('RECIPES_DIR', None)
+    recipes_dir = os.environ.get("RECIPES_DIR", None)
     if recipes_dir:
         return Path(recipes_dir).expanduser().resolve()
     return Path.cwd()
@@ -268,10 +254,14 @@ def get_kitchens(recipes_dir=None):
     # Find all subdirectories that contain .cook files
     kitchens = []
     for item in recipes_dir.iterdir():
-        if item.is_dir() and not item.name.startswith('.') and not item.name.startswith('_'):
-            # Check if directory contains any .cook files
-            if list(item.glob('*.cook')):
-                kitchens.append(item.name)
+        if (
+            item.is_dir()
+            and not item.name.startswith(".")
+            and not item.name.startswith("_")
+            and list(item.glob("*.cook"))
+        ):
+            # Directory contains .cook files
+            kitchens.append(item.name)
 
     return sorted(kitchens)
 
@@ -286,9 +276,9 @@ def get_recipes_in_kitchen(kitchen, recipes_dir=None):
     kitchen_path = recipes_dir / kitchen
     recipes = []
 
-    for recipe_file in sorted(kitchen_path.glob('*.cook')):
+    for recipe_file in sorted(kitchen_path.glob("*.cook")):
         # Convert filename to display name
-        display_name = recipe_file.stem.replace('-', ' ').replace('_', ' ').title()
+        display_name = recipe_file.stem.replace("-", " ").replace("_", " ").title()
         recipes.append((recipe_file.name, display_name))
 
     return recipes
@@ -304,7 +294,7 @@ def select_from_list(items, prompt, context=None, allow_back=False):
     print(f"\n┌─ {prompt}")
     print("│")
 
-    for i, (value, display) in enumerate(items, 1):
+    for i, (_value, display) in enumerate(items, 1):
         print(f"│ {i:2d}. {display}")
 
     print("│")
@@ -318,10 +308,10 @@ def select_from_list(items, prompt, context=None, allow_back=False):
 
             choice = input(prompt_text).strip()
 
-            if choice.lower() == 'q':
+            if choice.lower() == "q":
                 sys.exit(0)
 
-            if choice.lower() == 'b' and allow_back:
+            if choice.lower() == "b" and allow_back:
                 return None
 
             idx = int(choice) - 1
@@ -370,14 +360,14 @@ def show_shopping_list_preview(shopping_list):
     print("=" * 50)
 
     for category in shopping_list:
-        category_name = category.get('category', 'other')
-        items = category.get('items', [])
+        category_name = category.get("category", "other")
+        items = category.get("items", [])
 
         if items:
             print(f"\n{category_name.upper()}:")
             for item in items:
-                item_name = item.get('name', '')
-                quantity = item.get('quantity', [])
+                item_name = item.get("name", "")
+                quantity = item.get("quantity", [])
                 spec = format_quantity(quantity)
 
                 display = f"  • {item_name}"
@@ -407,7 +397,12 @@ def interactive_mode(recipes_dir=None):
     while True:
         # Show currently selected recipes
         if selected_recipes:
-            recipe_list = ", ".join([f"{r['display']}" + (f" (×{r['scale']:.1f})" if r['scale'] != 1.0 else "") for r in selected_recipes])
+            recipe_list = ", ".join(
+                [
+                    f"{r['display']}" + (f" (x{r['scale']:.1f})" if r["scale"] != 1.0 else "")
+                    for r in selected_recipes
+                ]
+            )
             context["Selected Recipes"] = recipe_list
 
         # Select kitchen
@@ -418,10 +413,7 @@ def interactive_mode(recipes_dir=None):
 
         kitchen_items = [(k, k) for k in kitchens]
         selected_kitchen = select_from_list(
-            kitchen_items,
-            "Select Kitchen",
-            context,
-            allow_back=False
+            kitchen_items, "Select Kitchen", context, allow_back=False
         )
 
         if not selected_kitchen:
@@ -437,10 +429,7 @@ def interactive_mode(recipes_dir=None):
             continue
 
         selected_recipe = select_from_list(
-            recipes,
-            f"Select Recipe from {selected_kitchen}",
-            context_with_kitchen,
-            allow_back=True
+            recipes, f"Select Recipe from {selected_kitchen}", context_with_kitchen, allow_back=True
         )
 
         if not selected_recipe:
@@ -461,14 +450,17 @@ def interactive_mode(recipes_dir=None):
         if scale != 1.0:
             recipe_path += f":{scale}"
 
-        selected_recipes.append({
-            'path': recipe_path,
-            'display': f"{selected_kitchen}/{recipe_display}",
-            'scale': scale
-        })
+        selected_recipes.append(
+            {"path": recipe_path, "display": f"{selected_kitchen}/{recipe_display}", "scale": scale}
+        )
 
         # Update context
-        recipe_list = ", ".join([f"{r['display']}" + (f" (×{r['scale']:.1f})" if r['scale'] != 1.0 else "") for r in selected_recipes])
+        recipe_list = ", ".join(
+            [
+                f"{r['display']}" + (f" (x{r['scale']:.1f})" if r["scale"] != 1.0 else "")
+                for r in selected_recipes
+            ]
+        )
         context["Selected Recipes"] = recipe_list
 
         # Ask to add another recipe
@@ -480,11 +472,11 @@ def interactive_mode(recipes_dir=None):
 
         while True:
             another = getch().lower()
-            if another in ('y', 'n'):
+            if another in ("y", "n"):
                 print(another)
                 break
 
-        if another != 'y':
+        if another != "y":
             break
 
     if not selected_recipes:
@@ -495,7 +487,7 @@ def interactive_mode(recipes_dir=None):
     clear_screen()
     print("\n━━━ Generating Shopping List ━━━\n")
 
-    recipe_paths = [r['path'] for r in selected_recipes]
+    recipe_paths = [r["path"] for r in selected_recipes]
     shopping_list = generate_shopping_list(recipe_paths, recipes_dir)
 
     if not shopping_list:
@@ -503,9 +495,11 @@ def interactive_mode(recipes_dir=None):
         sys.exit(0)
 
     # Filter staples
-    staples_category = next((cat for cat in shopping_list if cat.get('category', '').lower() == 'staples'), None)
+    staples_category = next(
+        (cat for cat in shopping_list if cat.get("category", "").lower() == "staples"), None
+    )
     if staples_category:
-        staples_count = len(staples_category.get('items', []))
+        staples_count = len(staples_category.get("items", []))
         if staples_count > 0:
             print(f"Filtered {staples_count} staple item(s) (already in pantry)")
     shopping_list = filter_staples(shopping_list)
@@ -520,11 +514,11 @@ def interactive_mode(recipes_dir=None):
 
     while True:
         send = getch().lower()
-        if send in ('y', 'n'):
+        if send in ("y", "n"):
             print(send)
             break
 
-    if send == 'y':
+    if send == "y":
         email, password, list_name = load_config()
         add_to_bring(shopping_list, email, password, list_name)
     else:
@@ -542,7 +536,7 @@ def main():
         return
 
     parser = argparse.ArgumentParser(
-        description='Add Cooklang recipes to Bring! shopping list',
+        description="Add Cooklang recipes to Bring! shopping list",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -558,36 +552,34 @@ Configuration:
     BRING_EMAIL=your-email@example.com
     BRING_PASSWORD=your-password
     BRING_LIST_NAME=Shopping List  # Optional, uses first list if not set
-        """
+        """,
     )
 
     parser.add_argument(
-        'recipes',
-        nargs='*',
-        help='Recipe files to add (supports :scale suffix, e.g., recipe.cook:2). Leave empty for interactive mode.'
+        "recipes",
+        nargs="*",
+        help="Recipe files to add (supports :scale suffix, e.g., recipe.cook:2). Leave empty for interactive mode.",
     )
 
     parser.add_argument(
-        '-d', '--dry-run',
-        action='store_true',
-        help='Generate shopping list without adding to Bring!'
+        "-d",
+        "--dry-run",
+        action="store_true",
+        help="Generate shopping list without adding to Bring!",
+    )
+
+    parser.add_argument("-l", "--list", action="store_true", help="Show shopping list in terminal")
+
+    parser.add_argument(
+        "--include-staples",
+        action="store_true",
+        help="Include staples (salt, pepper, water, oil, etc.) in the shopping list",
     )
 
     parser.add_argument(
-        '-l', '--list',
-        action='store_true',
-        help='Show shopping list in terminal'
-    )
-
-    parser.add_argument(
-        '--include-staples',
-        action='store_true',
-        help='Include staples (salt, pepper, water, oil, etc.) in the shopping list'
-    )
-
-    parser.add_argument(
-        '-r', '--recipes-dir',
-        help='Directory containing recipes (defaults to RECIPES_DIR env var or current directory)'
+        "-r",
+        "--recipes-dir",
+        help="Directory containing recipes (defaults to RECIPES_DIR env var or current directory)",
     )
 
     args = parser.parse_args()
@@ -612,11 +604,15 @@ Configuration:
     # Filter out staples unless requested
     if not args.include_staples:
         # Count staples before filtering
-        staples_category = next((cat for cat in shopping_list if cat.get('category', '').lower() == 'staples'), None)
+        staples_category = next(
+            (cat for cat in shopping_list if cat.get("category", "").lower() == "staples"), None
+        )
         if staples_category:
-            staples_count = len(staples_category.get('items', []))
+            staples_count = len(staples_category.get("items", []))
             if staples_count > 0:
-                print(f"Filtered {staples_count} staple item(s) (use --include-staples to show them)")
+                print(
+                    f"Filtered {staples_count} staple item(s) (use --include-staples to show them)"
+                )
         shopping_list = filter_staples(shopping_list)
 
     # Show list if requested
@@ -624,14 +620,14 @@ Configuration:
         print("\nShopping List:")
         print("=" * 50)
         for category in shopping_list:
-            category_name = category.get('category', 'other')
-            items = category.get('items', [])
+            category_name = category.get("category", "other")
+            items = category.get("items", [])
 
             if items:
                 print(f"\n{category_name.upper()}:")
                 for item in items:
-                    item_name = item.get('name', '')
-                    quantity = item.get('quantity', [])
+                    item_name = item.get("name", "")
+                    quantity = item.get("quantity", [])
                     spec = format_quantity(quantity)
 
                     display = f"  • {item_name}"
@@ -648,5 +644,5 @@ Configuration:
         print("\nDry run mode - items were not added to Bring!")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

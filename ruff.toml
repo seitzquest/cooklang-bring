@@ -7,6 +7,19 @@ target-version = "py312"
 # Line length to match common formatters
 line-length = 100
 
+# Exclude common directories
+extend-exclude = [
+    ".venv",
+    "venv",
+    ".git",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    "build",
+    "dist",
+]
+
 [lint]
 # Enable recommended rules
 select = [
@@ -30,19 +43,6 @@ ignore = [
 # Allow autofix for all enabled rules
 fixable = ["ALL"]
 unfixable = []
-
-# Exclude common directories
-extend-exclude = [
-    ".venv",
-    "venv",
-    ".git",
-    "__pycache__",
-    ".pytest_cache",
-    ".mypy_cache",
-    ".ruff_cache",
-    "build",
-    "dist",
-]
 
 [lint.per-file-ignores]
 # Ignore certain rules in test files
