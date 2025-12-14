@@ -8,3 +8,6 @@ dependencies = [
     "python-bring-api>=0.9.1",
     "python-dotenv>=1.0.0",
 ]
+
+[tool.deptry.package_module_name_map]
+python-dotenv = "dotenv"
